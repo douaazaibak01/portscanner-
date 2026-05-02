@@ -1,0 +1,257 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global resets ────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: #050709;
+  color: #e6edf3;
+  font-family: 'Syne', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0a0d12; }
+::-webkit-scrollbar-thumb { background: #1a2332; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #ff2d78; }
+
+/* ── Selection ────────────────────────────────────── */
+::selection { background: rgba(255,45,120,.3); color: #fff; }
+
+/* ── Grid background ──────────────────────────────── */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255,45,120,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,45,120,.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* ── Glow radial ──────────────────────────────────── */
+.radial-pink {
+  background: radial-gradient(ellipse 70vw 40vh at 50% 0%,
+    rgba(255,45,120,.1) 0%, transparent 70%);
+}
+
+/* ── Neon text ────────────────────────────────────── */
+.text-neon-pink {
+  color: #ff2d78;
+  text-shadow: 0 0 12px rgba(255,45,120,.6);
+}
+
+.text-neon-cyan {
+  color: #00e5ff;
+  text-shadow: 0 0 12px rgba(0,229,255,.5);
+}
+
+/* ── Card ─────────────────────────────────────────── */
+.card {
+  background: #0f1419;
+  border: 1px solid #1a2332;
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,45,120,.5), transparent);
+}
+
+/* ── Input ────────────────────────────────────────── */
+.input-field {
+  background: #0a0d12;
+  border: 1px solid #1a2332;
+  border-radius: 10px;
+  color: #e6edf3;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .9rem;
+  padding: .7rem 1rem;
+  width: 100%;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.input-field:focus {
+  border-color: #ff2d78;
+  box-shadow: 0 0 0 3px rgba(255,45,120,.15);
+}
+
+.input-field::placeholder { color: #5a6a7e; }
+
+/* ── Scan button ──────────────────────────────────── */
+.btn-scan {
+  background: linear-gradient(135deg, #ff2d78 0%, #cc2060 100%);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  padding: .8rem 2rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform .15s, box-shadow .2s;
+}
+
+.btn-scan:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 28px rgba(255,45,120,.6);
+}
+
+.btn-scan:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-scan::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.18), transparent 60%);
+}
+
+/* ── Severity badges ──────────────────────────────── */
+.badge-CRITICAL {
+  background: rgba(255,51,85,.15);
+  border: 1px solid rgba(255,51,85,.4);
+  color: #ff3355;
+}
+.badge-HIGH {
+  background: rgba(255,116,51,.12);
+  border: 1px solid rgba(255,116,51,.3);
+  color: #ff7433;
+}
+.badge-MEDIUM {
+  background: rgba(255,224,51,.1);
+  border: 1px solid rgba(255,224,51,.25);
+  color: #ffe033;
+}
+.badge-LOW {
+  background: rgba(0,255,136,.08);
+  border: 1px solid rgba(0,255,136,.2);
+  color: #00ff88;
+}
+
+/* ── Progress bar ─────────────────────────────────── */
+.progress-track {
+  background: #0a0d12;
+  border-radius: 999px;
+  height: 5px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff2d78, #ff6ba8);
+  box-shadow: 0 0 10px rgba(255,45,120,.5);
+  transition: width .3s ease;
+}
+
+/* ── Live log ─────────────────────────────────────── */
+.live-log {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .75rem;
+  max-height: 140px;
+  overflow-y: auto;
+  background: #050709;
+  border: 1px solid #1a2332;
+  border-radius: 8px;
+  padding: .5rem .75rem;
+}
+
+.log-entry { padding: .1rem 0; animation: fadeUp .2s ease; }
+.log-open  { color: #ff2d78; }
+.log-info  { color: #5a6a7e; }
+.log-ok    { color: #00ff88; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Findings card ────────────────────────────────── */
+.finding-card {
+  background: #0a0d12;
+  border: 1px solid #1a2332;
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  animation: fadeUp .3s ease;
+  transition: border-color .2s;
+}
+
+.finding-card:hover { border-color: rgba(255,45,120,.3); }
+
+/* ── Table ────────────────────────────────────────── */
+.ports-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; }
+.ports-table th {
+  font-size: .65rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: #5a6a7e;
+  padding: .5rem .75rem;
+  border-bottom: 1px solid #1a2332;
+  text-align: left;
+}
+.ports-table td { padding: .55rem .75rem; border-bottom: 1px solid rgba(26,35,50,.5); font-size: .82rem; }
+.ports-table tr:last-child td { border-bottom: none; }
+.ports-table tr { transition: background .12s; }
+.ports-table tr:hover td { background: rgba(255,45,120,.04); }
+
+/* ── Stat cards ───────────────────────────────────── */
+.stat-card {
+  background: #0a0d12;
+  border: 1px solid #1a2332;
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.stat-open::after   { background: #ff2d78; box-shadow: 0 0 8px rgba(255,45,120,.6); }
+.stat-crit::after   { background: #ff3355; box-shadow: 0 0 8px rgba(255,51,85,.6); }
+.stat-high::after   { background: #ff7433; }
+.stat-medium::after { background: #ffe033; }
+.stat-low::after    { background: #00ff88; }
+
+/* ── Download button ──────────────────────────────── */
+.btn-pdf {
+  background: transparent;
+  border: 1px solid #1a2332;
+  border-radius: 8px;
+  color: #5a6a7e;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .75rem;
+  padding: .5rem 1rem;
+  transition: all .15s;
+  letter-spacing: .05em;
+}
+
+.btn-pdf:hover {
+  border-color: #ff2d78;
+  color: #ff2d78;
+  box-shadow: 0 0 12px rgba(255,45,120,.2);
+}

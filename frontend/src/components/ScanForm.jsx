@@ -1,0 +1,159 @@
+import React, { useState } from "react";
+
+const PRESETS = [
+  { label: "Top 1K",       value: "1-1024" },
+  { label: "Full scan",    value: "1-65535" },
+  { label: "FTP/Telnet",   value: "21-23" },
+  { label: "Web",          value: "80-443" },
+  { label: "Quick 1-100",  value: "1-100" },
+];
+
+export default function ScanForm({ onScan, onAbort, scanning }) {
+  const [target,         setTarget]         = useState("");
+  const [ports,          setPorts]          = useState("1-1024");
+  const [timeout,        setTimeout_]       = useState("0.8");
+  const [threads,        setThreads]        = useState("150");
+  const [declaredOwner,  setDeclaredOwner]  = useState(false);
+  const [err,            setErr]            = useState("");
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    setErr("");
+
+    if (!target.trim()) { setErr("Please enter a target IP address or CIDR range."); return; }
+
+    const portMatch = ports.match(/^(\d+)-(\d+)$/);
+    if (!portMatch) { setErr("Port range must be in format start-end (e.g. 1-1024)."); return; }
+    const [, s, en] = portMatch.map(Number);
+    if (s < 1 || en > 65535 || s > en) { setErr("Port range must be 1-65535 with start ≤ end."); return; }
+    if (en - s > 9999) { setErr("Maximum 10 000 ports per scan."); return; }
+
+    if (!declaredOwner) {
+      setErr("You must confirm that you own or have permission to scan this target.");
+      return;
+    }
+
+    onScan(target.trim(), ports.trim(), parseFloat(timeout), parseInt(threads), declaredOwner);
+  }
+
+  return (
+    <div className="card p-6 mb-5">
+      <div className="font-mono text-[10px] tracking-[.18em] uppercase mb-5"
+        style={{ color: "#ff2d78" }}>// Configure Scan</div>
+
+      <form onSubmit={handleSubmit}>
+        {/* Target */}
+        <div className="mb-4">
+          <label className="block font-mono text-[11px] uppercase tracking-widest mb-2"
+            style={{ color: "#5a6a7e" }}>Target IP / CIDR Range</label>
+          <input className="input-field" type="text"
+            placeholder="e.g. 192.168.1.1  or  10.0.0.0/24"
+            value={target} onChange={e => setTarget(e.target.value)}
+            disabled={scanning} autoComplete="off" spellCheck="false" />
+        </div>
+
+        {/* Port range + timeout */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block font-mono text-[11px] uppercase tracking-widest mb-2"
+              style={{ color: "#5a6a7e" }}>Port Range</label>
+            <input className="input-field" type="text" value={ports}
+              onChange={e => setPorts(e.target.value)} disabled={scanning} spellCheck="false" />
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {PRESETS.map(p => (
+                <button key={p.value} type="button" onClick={() => setPorts(p.value)}
+                  disabled={scanning}
+                  className="font-mono text-[11px] px-2.5 py-1 rounded-md transition-all duration-150"
+                  style={{
+                    border: "1px solid #1a2332", background: "transparent",
+                    color: ports === p.value ? "#ff2d78" : "#5a6a7e",
+                    borderColor: ports === p.value ? "rgba(255,45,120,.4)" : "#1a2332",
+                  }}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block font-mono text-[11px] uppercase tracking-widest mb-2"
+              style={{ color: "#5a6a7e" }}>Timeout (seconds)</label>
+            <input className="input-field" type="number" min="0.1" max="10" step="0.1"
+              value={timeout} onChange={e => setTimeout_(e.target.value)} disabled={scanning} />
+          </div>
+        </div>
+
+        {/* Threads */}
+        <div className="mb-5">
+          <label className="block font-mono text-[11px] uppercase tracking-widest mb-2"
+            style={{ color: "#5a6a7e" }}>Thread Count</label>
+          <select className="input-field" value={threads}
+            onChange={e => setThreads(e.target.value)} disabled={scanning}
+            style={{ cursor: "pointer" }}>
+            <option value="50">50 — Careful (slow networks)</option>
+            <option value="100">100 — Balanced</option>
+            <option value="150">150 — Fast (default)</option>
+            <option value="200">200 — Aggressive</option>
+            <option value="300">300 — Maximum</option>
+          </select>
+        </div>
+
+        {/* ── Ownership declaration ─────────────────────── */}
+        <div className="mb-5 px-4 py-3 rounded-lg"
+          style={{
+            background: declaredOwner ? "rgba(0,255,136,.05)" : "rgba(255,45,120,.05)",
+            border: `1px solid ${declaredOwner ? "rgba(0,255,136,.2)" : "rgba(255,45,120,.2)"}`,
+            transition: "all .2s",
+          }}>
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={declaredOwner}
+              onChange={e => setDeclaredOwner(e.target.checked)}
+              disabled={scanning}
+              style={{ marginTop: "2px", accentColor: "#ff2d78", width: "15px", height: "15px", flexShrink: 0 }}
+            />
+            <span className="font-mono text-[11px] leading-relaxed"
+              style={{ color: declaredOwner ? "#00ff88" : "#ff6a9d" }}>
+              I confirm that I own this target or have explicit written permission to scan it.
+              Unauthorized port scanning may be illegal in my jurisdiction. I accept full
+              responsibility for how I use this tool.
+            </span>
+          </label>
+        </div>
+
+        {err && (
+          <div className="mb-4 px-4 py-3 rounded-lg font-mono text-sm"
+            style={{ background: "rgba(255,51,85,.08)", border: "1px solid rgba(255,51,85,.3)", color: "#ff3355" }}>
+            ✕ {err}
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <button type="submit" className="btn-scan flex-1" disabled={scanning}>
+            {scanning ? (
+              <span className="flex items-center justify-center gap-2">
+                <SpinIcon /> Scanning…
+              </span>
+            ) : "⬡ Launch Scan"}
+          </button>
+          {scanning && (
+            <button type="button" onClick={onAbort}
+              className="font-mono text-sm px-4 rounded-lg transition-all"
+              style={{ border: "1px solid rgba(255,51,85,.3)", color: "#ff3355", background: "transparent" }}>
+              Abort
+            </button>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function SpinIcon() {
+  return (
+    <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"
+        strokeDasharray="60" strokeDashoffset="15" />
+    </svg>
+  );
+}
