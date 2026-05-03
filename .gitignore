@@ -1,0 +1,13 @@
+backend/__pycache__/
+backend/scanner/__pycache__/
+backend/scan_logs.db
+frontend/node_modules/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.env
+.env.*
+.pytest_cache/
+dist/
+build/
