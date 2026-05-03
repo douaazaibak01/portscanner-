@@ -178,12 +178,17 @@ export function usePdf() {
     } else {
       doc.setFillColor(235, 250, 240);
       doc.setDrawColor(150, 220, 170);
-      doc.roundedRect(14, y, W - 28, 14, 3, 3, "FD");
+      doc.setLineWidth(0.4);
+      doc.roundedRect(14, y, W - 28, 18, 3, 3, "FD");
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
+      doc.setFontSize(10);
       doc.setTextColor(22, 140, 70);
-      doc.text("✓  No insecure protocols detected — all scanned ports passed security review.", W / 2, y + 9, { align: "center" });
-      y += 22;
+      doc.text("\u2713  No Insecure Protocols Detected", W / 2, y + 8, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(60, 140, 80);
+      doc.text("All scanned ports passed security review.", W / 2, y + 14, { align: "center" });
+      y += 26;
     }
 
     // ── Open ports table ──────────────────────────────────────
