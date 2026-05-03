@@ -1,8 +1,7 @@
 /**
  * useScan.js
  * Manages the scan lifecycle via Server-Sent Events.
- * Now accepts a JWT token and passes it as a query param to the backend.
- * Also forwards the declaredOwner flag required by the secured API.
+ * No auth token needed — ownership checkbox enforced server-side.
  */
 
 import { useState, useRef, useCallback } from "react";
@@ -22,7 +21,7 @@ const INIT_STATE = {
   elapsed: null,
 };
 
-export function useScan(token) {
+export function useScan() {
   const [state, setState] = useState(INIT_STATE);
   const esRef = useRef(null);
 
@@ -41,13 +40,8 @@ export function useScan(token) {
     const params = new URLSearchParams({
       target, ports, timeout, threads,
       declared_owner: declaredOwner ? "true" : "false",
-      // Pass JWT as query param so EventSource can authenticate
-      // (EventSource doesn't support custom headers)
-      token,
     });
 
-    // Note: backend must accept ?token= as an alternative to Bearer header
-    // for SSE connections. See backend auth note below.
     const url = `${API_BASE}/scan/stream?${params}`;
     const es  = new EventSource(url);
     esRef.current = es;
@@ -114,10 +108,10 @@ export function useScan(token) {
       es.close();
       patch({
         phase: "error",
-        error: "Connection lost or unauthorized. Check your session and try again.",
+        error: "Connection lost. Check that the backend is running.",
       });
     };
-  }, [addLog, patch, token]);
+  }, [addLog, patch]);
 
   const abortScan = useCallback(() => {
     if (esRef.current) { esRef.current.close(); esRef.current = null; }
