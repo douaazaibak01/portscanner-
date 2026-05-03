@@ -65,7 +65,7 @@ app = FastAPI(title="PortScan Pro API", version="4.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"], # This allows any frontend to talk to your backend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
