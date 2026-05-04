@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PortScan Pro — Local Network Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink:       #ff2d78;
+      --pink-glow:  rgba(255,45,120,.35);
+      --pink-dim:   rgba(255,45,120,.08);
+      --cyan:       #00e5ff;
+      --cyan-glow:  rgba(0,229,255,.3);
+      --cyan-dim:   rgba(0,229,255,.07);
+      --green:      #00ff88;
+      --bg:         #050709;
+      --surface:    #0f1419;
+      --border:     #1a2332;
+      --text:       #e6edf3;
+      --muted:      #5a6a7e;
+      --font-sans:  'Syne', sans-serif;
+      --font-mono:  'JetBrains Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ── Grid background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,45,120,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,45,120,.03) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Hero glow ── */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -20vh;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80vw;
+      height: 60vh;
+      background: radial-gradient(ellipse, rgba(255,45,120,.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 0 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -.02em;
+    }
+
+    .nav-logo .icon {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      background: var(--pink-dim);
+      border: 1.5px solid rgba(255,45,120,.4);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 16px var(--pink-glow);
+    }
+
+    .nav-logo .pink { color: var(--pink); text-shadow: 0 0 10px var(--pink-glow); }
+
+    .nav-link {
+      font-family: var(--font-mono);
+      font-size: .75rem;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: .06em;
+      transition: color .15s;
+    }
+    .nav-link:hover { color: var(--cyan); }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 80px 0 60px;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--font-mono);
+      font-size: .7rem;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--pink);
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fade-up .6s .1s forwards;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.6rem, 7vw, 4rem);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -.03em;
+      margin-bottom: 22px;
+      opacity: 0;
+      animation: fade-up .6s .2s forwards;
+    }
+
+    .hero h1 .pink {
+      color: var(--pink);
+      text-shadow: 0 0 30px var(--pink-glow);
+    }
+
+    .hero-sub {
+      font-family: var(--font-mono);
+      font-size: .88rem;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 520px;
+      margin: 0 auto 36px;
+      opacity: 0;
+      animation: fade-up .6s .3s forwards;
+    }
+
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 44px;
+      opacity: 0;
+      animation: fade-up .6s .35s forwards;
+    }
+
+    .badge {
+      font-family: var(--font-mono);
+      font-size: .7rem;
+      letter-spacing: .08em;
+      padding: 5px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: transparent;
+    }
+
+    .badge.green {
+      border-color: rgba(0,255,136,.25);
+      color: var(--green);
+      background: rgba(0,255,136,.04);
+    }
+
+    /* ── CTA BUTTONS ── */
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+      opacity: 0;
+      animation: fade-up .6s .45s forwards;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      font-family: var(--font-mono);
+      font-size: .85rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      padding: 14px 32px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, #ff2d78, #c4005e);
+      color: #fff;
+      box-shadow: 0 0 30px rgba(255,45,120,.4), 0 4px 15px rgba(0,0,0,.4);
+      text-decoration: none;
+      transition: transform .15s, box-shadow .15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+      animation: shimmer 2.5s infinite;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(255,45,120,.6), 0 8px 20px rgba(0,0,0,.5); }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      font-family: var(--font-mono);
+      font-size: .85rem;
+      letter-spacing: .05em;
+      padding: 14px 28px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,229,255,.3);
+      color: var(--cyan);
+      background: rgba(0,229,255,.05);
+      text-decoration: none;
+      transition: all .15s;
+    }
+    .btn-secondary:hover { background: rgba(0,229,255,.1); border-color: rgba(0,229,255,.5); transform: translateY(-2px); }
+
+    /* ── OS TABS ── */
+    .os-tabs {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin: 14px 0 0;
+      opacity: 0;
+      animation: fade-up .6s .55s forwards;
+    }
+
+    .os-tab {
+      font-family: var(--font-mono);
+      font-size: .68rem;
+      letter-spacing: .08em;
+      color: var(--muted);
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      background: transparent;
+      transition: all .15s;
+    }
+    .os-tab.active, .os-tab:hover {
+      border-color: var(--border);
+      color: var(--text);
+      background: var(--surface);
+    }
+
+    .download-links {
+      margin-top: 10px;
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      color: var(--muted);
+      display: flex;
+      gap: 18px;
+      justify-content: center;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fade-up .6s .6s forwards;
+    }
+
+    .download-links a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color .15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .download-links a:hover { color: var(--pink); }
+
+    /* ── OPEN APP NOTICE ── */
+    .open-notice {
+      margin: 40px auto 0;
+      max-width: 480px;
+      padding: 18px 24px;
+      border-radius: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.7;
+      opacity: 0;
+      animation: fade-up .6s .65s forwards;
+      position: relative;
+      overflow: hidden;
+    }
+    .open-notice::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,229,255,.4), transparent);
+    }
+
+    .open-notice .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .open-notice .step:last-child { margin-bottom: 0; }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--pink-dim);
+      border: 1px solid rgba(255,45,120,.3);
+      color: var(--pink);
+      font-size: .65rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .open-app-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--cyan);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(0,229,255,.3);
+      padding-bottom: 1px;
+      transition: all .15s;
+    }
+    .open-app-link:hover { color: #fff; border-color: #fff; }
+
+    /* ── DIVIDER ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 70px 0 50px;
+      color: var(--border);
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .divider span {
+      font-family: var(--font-mono);
+      font-size: .65rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: .7rem;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--pink);
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-size: 1.7rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin-bottom: 10px;
+    }
+
+    .section-sub {
+      font-family: var(--font-mono);
+      font-size: .82rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 40px;
+    }
+
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+    }
+
+    .flow-item {
+      display: flex;
+      gap: 20px;
+      padding: 0 0 32px 0;
+      position: relative;
+    }
+
+    .flow-item::before {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 40px;
+      bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--border), transparent);
+    }
+    .flow-item:last-child::before { display: none; }
+
+    .flow-dot {
+      flex-shrink: 0;
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: .75rem;
+      font-weight: 700;
+    }
+    .flow-dot.pink { background: var(--pink-dim); border: 1.5px solid rgba(255,45,120,.35); color: var(--pink); }
+    .flow-dot.cyan { background: var(--cyan-dim); border: 1.5px solid rgba(0,229,255,.25); color: var(--cyan); }
+    .flow-dot.green { background: rgba(0,255,136,.06); border: 1.5px solid rgba(0,255,136,.25); color: var(--green); }
+
+    .flow-body h3 {
+      font-size: .95rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      padding-top: 8px;
+    }
+    .flow-body p {
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ── WHY LOCAL ── */
+    .why-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    @media (max-width: 540px) { .why-grid { grid-template-columns: 1fr; } }
+
+    .why-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .why-card:hover { border-color: rgba(255,45,120,.25); }
+    .why-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,45,120,.3), transparent);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .why-card:hover::before { opacity: 1; }
+
+    .why-icon {
+      font-size: 1.4rem;
+      margin-bottom: 12px;
+    }
+    .why-card h4 { font-size: .9rem; font-weight: 700; margin-bottom: 6px; }
+    .why-card p {
+      font-family: var(--font-mono);
+      font-size: .75rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ── FEATURES ── */
+    .features-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 540px) { .features-list { grid-template-columns: 1fr; } }
+
+    .feat {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      color: var(--muted);
+    }
+    .feat .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--pink);
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+
+    /* ── INSTALL SECTION ── */
+    .install-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .install-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .itab {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: .75rem;
+      letter-spacing: .06em;
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--muted);
+      border: none;
+      background: transparent;
+      border-bottom: 2px solid transparent;
+      transition: all .15s;
+    }
+    .itab.active { color: var(--pink); border-bottom-color: var(--pink); background: var(--pink-dim); }
+    .itab:hover:not(.active) { color: var(--text); background: rgba(255,255,255,.02); }
+
+    .install-content { padding: 28px; }
+
+    .install-pane { display: none; }
+    .install-pane.active { display: block; }
+
+    .code-block {
+      background: #0a0d12;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      font-family: var(--font-mono);
+      font-size: .8rem;
+      color: #e6edf3;
+      line-height: 1.8;
+      margin: 12px 0;
+      position: relative;
+      overflow-x: auto;
+    }
+    .code-block .comment { color: var(--muted); }
+    .code-block .cmd { color: var(--cyan); }
+    .code-block .out { color: var(--green); }
+
+    .copy-btn {
+      position: absolute;
+      top: 10px; right: 10px;
+      font-family: var(--font-mono);
+      font-size: .65rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: rgba(255,255,255,.2); }
+
+    .install-note {
+      font-family: var(--font-mono);
+      font-size: .75rem;
+      color: var(--muted);
+      line-height: 1.7;
+      padding: 14px 18px;
+      border-radius: 10px;
+      background: rgba(0,229,255,.04);
+      border: 1px solid rgba(0,229,255,.12);
+      margin-top: 14px;
+    }
+    .install-note strong { color: var(--cyan); }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 50px 0 40px;
+      border-top: 1px solid var(--border);
+      margin-top: 80px;
+    }
+    footer p {
+      font-family: var(--font-mono);
+      font-size: .72rem;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes shimmer {
+      0%   { left: -100%; }
+      100% { left: 200%; }
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--pink); }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">
+      <div class="icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="3" fill="#ff2d78"/>
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"
+            stroke="#ff2d78" stroke-width="1.2" fill="none" opacity=".35"/>
+          <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z"
+            stroke="#ff2d78" stroke-width="1.2" fill="none" opacity=".65"/>
+          <line x1="12" y1="12" x2="20" y2="4" stroke="#ff2d78" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      Port<span class="pink">Scan</span>&nbsp;Pro
+    </div>
+    <a href="#install" class="nav-link">↓ Install</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">// Local Network Security Tool</div>
+
+    <h1>
+      Scan your<br/>
+      <span class="pink">own network.</span><br/>
+      No cloud. No limits.
+    </h1>
+
+    <p class="hero-sub">
+      PortScan Pro runs on your machine and scans your local network directly.<br/>
+      Private IPs like 192.168.x.x work perfectly — because the scan happens on your laptop.
+    </p>
+
+    <div class="hero-badges">
+      <span class="badge green">✓ No Python required</span>
+      <span class="badge green">✓ No Node.js required</span>
+      <span class="badge green">✓ Single file download</span>
+      <span class="badge">Windows · macOS · Linux</span>
+    </div>
+
+    <div class="cta-row">
+      <a href="#install" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 16l-5-5 1.4-1.4L11 13.2V4h2v9.2l2.6-3.6L17 11l-5 5zm-7 4v-2h14v2H5z"/>
+        </svg>
+        Download &amp; Install
+      </a>
+      <a href="http://localhost:8000" target="_blank" class="btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+        </svg>
+        Open App
+      </a>
+    </div>
+
+    <div class="open-notice">
+      <div class="step">
+        <span class="step-num">1</span>
+        <span>Download and run the installer below — it starts a local server on port 8000.</span>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <span>Your browser opens automatically. Or click
+          <a href="http://localhost:8000" target="_blank" class="open-app-link">
+            localhost:8000
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+            </svg>
+          </a>
+          after it is running.
+        </span>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <span>Enter any IP on your local network and scan. No configuration needed.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIVIDER -->
+  <div class="divider"><span>How it works</span></div>
+
+  <!-- HOW IT WORKS -->
+  <section style="margin-bottom: 0">
+    <div class="section-label">// Architecture</div>
+    <div class="section-title">Why it runs locally</div>
+    <p class="section-sub">
+      Unlike hosted scanners, PortScan Pro runs entirely on your machine.<br/>
+      The scan packets go directly from your laptop to your network — no middleman.
+    </p>
+
+    <div class="flow">
+      <div class="flow-item">
+        <div class="flow-dot pink">01</div>
+        <div class="flow-body">
+          <h3>You run the executable</h3>
+          <p>A self-contained server starts on localhost:8000. No installation, no dependencies — everything is bundled inside the single file.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-dot cyan">02</div>
+        <div class="flow-body">
+          <h3>Your browser opens the UI</h3>
+          <p>FastAPI serves the full React interface at http://localhost:8000. You type a target IP and click Scan.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-dot green">03</div>
+        <div class="flow-body">
+          <h3>Scan packets travel from your machine</h3>
+          <p>TCP connections go directly from your laptop to the target. Private IPs (192.168.x.x, 10.x.x.x, 172.x.x.x) are reachable because you are on the same network.</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-dot pink">04</div>
+        <div class="flow-body">
+          <h3>Results stream back in real time</h3>
+          <p>Open ports, banners, risk scores, and remediation advice appear live as the scan progresses. Download a PDF report when done.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIVIDER -->
+  <div class="divider"><span>Why local</span></div>
+
+  <!-- WHY LOCAL -->
+  <section>
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="why-icon">🔒</div>
+        <h4>Private IPs work</h4>
+        <p>A hosted server can never reach 192.168.x.x — those are your router and devices. Running locally means the scan happens right on your network.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">⚡</div>
+        <h4>Fast &amp; direct</h4>
+        <p>No round-trip to a cloud server. Scan packets travel at LAN speed — 150 threads scanning 1024 ports typically finishes in under 10 seconds.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">🛡️</div>
+        <h4>Your data stays local</h4>
+        <p>Scan results, IPs, banners — none of it leaves your machine. The app has no analytics, no telemetry, no account required.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">📦</div>
+        <h4>Zero dependencies</h4>
+        <p>Python, Node.js, Docker — none needed. The executable bundles everything. One file, double-click, done.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIVIDER -->
+  <div class="divider"><span>Features</span></div>
+
+  <section>
+    <div class="section-label">// What you get</div>
+    <div class="section-title" style="margin-bottom:24px">Everything in one scan</div>
+
+    <div class="features-list">
+      <div class="feat"><span class="dot"></span>Real-time streaming scan via SSE</div>
+      <div class="feat"><span class="dot"></span>TCP port scanning (1–65535)</div>
+      <div class="feat"><span class="dot"></span>Service banner grabbing</div>
+      <div class="feat"><span class="dot"></span>Insecure protocol detection</div>
+      <div class="feat"><span class="dot"></span>Risk scoring (CVSS-inspired, 1–10)</div>
+      <div class="feat"><span class="dot"></span>Remediation guidance per finding</div>
+      <div class="feat"><span class="dot"></span>Sortable open ports table</div>
+      <div class="feat"><span class="dot"></span>PDF report download (dark theme)</div>
+      <div class="feat"><span class="dot"></span>CIDR range scanning (up to /28)</div>
+      <div class="feat"><span class="dot"></span>Abort running scan anytime</div>
+    </div>
+  </section>
+
+  <!-- DIVIDER -->
+  <div class="divider"><span>Install</span></div>
+
+  <!-- INSTALL -->
+  <section id="install">
+    <div class="section-label">// Installation</div>
+    <div class="section-title" style="margin-bottom: 8px">Get started in 30 seconds</div>
+    <p class="section-sub">Choose your platform. No Python or Node.js needed.</p>
+
+    <div class="install-box">
+      <div class="install-tabs">
+        <button class="itab active" onclick="switchTab(this, 'win')">🪟 Windows</button>
+        <button class="itab" onclick="switchTab(this, 'mac')">🍎 macOS</button>
+        <button class="itab" onclick="switchTab(this, 'linux')">🐧 Linux</button>
+        <button class="itab" onclick="switchTab(this, 'build')">🔧 Build from source</button>
+      </div>
+
+      <div class="install-content">
+
+        <!-- WINDOWS -->
+        <div class="install-pane active" id="pane-win">
+          <p style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted);margin-bottom:16px;">
+            1. Download the executable below.<br/>
+            2. Double-click <code style="color:var(--cyan)">PortScanPro.exe</code> — your browser opens automatically.
+          </p>
+          <a href="dist/PortScanPro.exe" class="btn-primary" style="display:inline-flex;margin-bottom:0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 16l-5-5 1.4-1.4L11 13.2V4h2v9.2l2.6-3.6L17 11l-5 5zm-7 4v-2h14v2H5z"/>
+            </svg>
+            PortScanPro.exe
+          </a>
+          <div class="install-note" style="margin-top:16px">
+            <strong>SmartScreen warning?</strong> Click <em>More info → Run anyway</em>.
+            This is normal for unsigned executables — Windows flags any unsigned app the first time.
+          </div>
+        </div>
+
+        <!-- MACOS -->
+        <div class="install-pane" id="pane-mac">
+          <p style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted);margin-bottom:16px;">
+            1. Download and make it executable.<br/>
+            2. Run it — browser opens automatically.
+          </p>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <span class="comment"># Download</span><br/>
+            <span class="cmd">curl -L -o PortScanPro https://your-site.com/dist/PortScanPro-mac</span><br/><br/>
+            <span class="comment"># Make executable and run</span><br/>
+            <span class="cmd">chmod +x PortScanPro && ./PortScanPro</span><br/><br/>
+            <span class="out"># Browser opens at http://localhost:8000</span>
+          </div>
+          <div class="install-note">
+            <strong>Gatekeeper warning?</strong> Go to System Settings → Privacy &amp; Security → scroll down → click <em>Open Anyway</em>.
+          </div>
+        </div>
+
+        <!-- LINUX -->
+        <div class="install-pane" id="pane-linux">
+          <p style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted);margin-bottom:16px;">
+            1. Download and make it executable.<br/>
+            2. Run it — browser opens automatically.
+          </p>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <span class="comment"># Download</span><br/>
+            <span class="cmd">wget https://your-site.com/dist/PortScanPro-linux</span><br/><br/>
+            <span class="comment"># Make executable and run</span><br/>
+            <span class="cmd">chmod +x PortScanPro-linux && ./PortScanPro-linux</span><br/><br/>
+            <span class="out"># Server starts at http://localhost:8000</span>
+          </div>
+          <div class="install-note">
+            On headless servers, open <strong style="color:var(--cyan)">http://localhost:8000</strong> manually in your browser.
+          </div>
+        </div>
+
+        <!-- BUILD -->
+        <div class="install-pane" id="pane-build">
+          <p style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted);margin-bottom:14px;">
+            Requires Python 3.10+ and Node.js 18+.
+          </p>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <span class="comment"># Clone and build (Linux / macOS)</span><br/>
+            <span class="cmd">git clone https://github.com/your-repo/portscan-pro</span><br/>
+            <span class="cmd">cd portscan-pro</span><br/>
+            <span class="cmd">bash build.sh</span><br/><br/>
+            <span class="out"># Binary created at dist/PortScanPro</span>
+          </div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <span class="comment">REM Windows</span><br/>
+            <span class="cmd">build.bat</span><br/><br/>
+            <span class="out">REM Binary created at dist\PortScanPro.exe</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px">
+      <div style="width:28px;height:28px;border-radius:7px;background:rgba(255,45,120,.1);border:1px solid rgba(255,45,120,.3);display:flex;align-items:center;justify-content:center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="3" fill="#ff2d78"/>
+          <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z" stroke="#ff2d78" stroke-width="1.2" fill="none"/>
+          <line x1="12" y1="12" x2="19" y2="5" stroke="#ff2d78" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span style="font-weight:800;font-size:.9rem;">Port<span style="color:var(--pink)">Scan</span> Pro</span>
+    </div>
+    <p>PortScan Pro v2.0 · Runs locally on your machine</p>
+    <p style="margin-top:6px;font-size:.68rem;opacity:.5;">
+      Once installed, open the app at
+      <a href="http://localhost:8000" target="_blank" style="color:var(--cyan);text-decoration:none;">localhost:8000</a>
+    </p>
+  </footer>
+
+</div>
+
+<script>
+  // ── Tab switching ──────────────────────────────────────────────────────────
+  function switchTab(btn, pane) {
+    document.querySelectorAll('.itab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.install-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('pane-' + pane).classList.add('active');
+  }
+
+  // ── Copy code ──────────────────────────────────────────────────────────────
+  function copyCode(btn) {
+    const block = btn.closest('.code-block');
+    // Extract just the text, stripping HTML tags
+    const text = block.innerText
+      .replace(/^copy\n/, '')   // remove the "copy" button text
+      .trim();
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'copied!';
+      btn.style.color = '#00ff88';
+      setTimeout(() => { btn.textContent = 'copy'; btn.style.color = ''; }, 1800);
+    });
+  }
+
+  // ── Animate sections on scroll ────────────────────────────────────────────
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    }),
+    { threshold: 0.1 }
+  );
+
+  document.querySelectorAll('.why-card, .feat, .flow-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity .5s, transform .5s';
+    observer.observe(el);
+  });
+</script>
+
+</body>
+</html>

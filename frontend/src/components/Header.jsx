@@ -44,6 +44,20 @@ export default function Header() {
         Network Security Scanner &amp; Insecure Protocol Detector
       </p>
 
+      {/* Local badge */}
+      <div className="mt-3 flex items-center justify-center">
+        <span
+          className="font-mono text-[10px] tracking-widest px-3 py-1 rounded-full"
+          style={{
+            background: "rgba(0,229,255,.06)",
+            border: "1px solid rgba(0,229,255,.2)",
+            color: "#00e5ff",
+          }}
+        >
+          ⬡ Running locally — scans your own network
+        </span>
+      </div>
+
       {/* Animated scan line decoration */}
       <div className="mt-4 flex items-center justify-center gap-2">
         <div className="h-px w-16" style={{ background: "linear-gradient(90deg, transparent, rgba(255,45,120,.4))" }} />
