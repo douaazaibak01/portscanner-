@@ -238,57 +238,6 @@
     }
     .btn-secondary:hover { background: rgba(0,229,255,.1); border-color: rgba(0,229,255,.5); transform: translateY(-2px); }
 
-    /* ── OS TABS ── */
-    .os-tabs {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      margin: 14px 0 0;
-      opacity: 0;
-      animation: fade-up .6s .55s forwards;
-    }
-
-    .os-tab {
-      font-family: var(--font-mono);
-      font-size: .68rem;
-      letter-spacing: .08em;
-      color: var(--muted);
-      padding: 4px 12px;
-      border-radius: 6px;
-      border: 1px solid transparent;
-      cursor: pointer;
-      background: transparent;
-      transition: all .15s;
-    }
-    .os-tab.active, .os-tab:hover {
-      border-color: var(--border);
-      color: var(--text);
-      background: var(--surface);
-    }
-
-    .download-links {
-      margin-top: 10px;
-      font-family: var(--font-mono);
-      font-size: .72rem;
-      color: var(--muted);
-      display: flex;
-      gap: 18px;
-      justify-content: center;
-      flex-wrap: wrap;
-      opacity: 0;
-      animation: fade-up .6s .6s forwards;
-    }
-
-    .download-links a {
-      color: var(--muted);
-      text-decoration: none;
-      transition: color .15s;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .download-links a:hover { color: var(--pink); }
-
     /* ── OPEN APP NOTICE ── */
     .open-notice {
       margin: 40px auto 0;
@@ -671,7 +620,8 @@
     </div>
 
     <div class="cta-row">
-      <a href="#install" class="btn-primary">
+      <!-- UPDATED LINK 1 -->
+      <a href="https://github.com/douaazaibak01/portscanner-/releases/download/V2.0/PortScanPro.exe" class="btn-primary">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 16l-5-5 1.4-1.4L11 13.2V4h2v9.2l2.6-3.6L17 11l-5 5zm-7 4v-2h14v2H5z"/>
         </svg>
@@ -828,7 +778,8 @@
             1. Download the executable below.<br/>
             2. Double-click <code style="color:var(--cyan)">PortScanPro.exe</code> — your browser opens automatically.
           </p>
-          <a href="dist/PortScanPro.exe" class="btn-primary" style="display:inline-flex;margin-bottom:0">
+          <!-- UPDATED LINK 2 -->
+          <a href="https://github.com/douaazaibak01/portscanner-/releases/download/V2.0/PortScanPro.exe" class="btn-primary" style="display:inline-flex;margin-bottom:0">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 16l-5-5 1.4-1.4L11 13.2V4h2v9.2l2.6-3.6L17 11l-5 5zm-7 4v-2h14v2H5z"/>
             </svg>
@@ -849,7 +800,8 @@
           <div class="code-block">
             <button class="copy-btn" onclick="copyCode(this)">copy</button>
             <span class="comment"># Download</span><br/>
-            <span class="cmd">curl -L -o PortScanPro https://your-site.com/dist/PortScanPro-mac</span><br/><br/>
+            <!-- UPDATED LINK 3 -->
+            <span class="cmd">curl -L -o PortScanPro https://github.com/douaazaibak01/portscanner-/releases/download/V2.0/PortScanPro.exe</span><br/><br/>
             <span class="comment"># Make executable and run</span><br/>
             <span class="cmd">chmod +x PortScanPro && ./PortScanPro</span><br/><br/>
             <span class="out"># Browser opens at http://localhost:8000</span>
@@ -868,9 +820,10 @@
           <div class="code-block">
             <button class="copy-btn" onclick="copyCode(this)">copy</button>
             <span class="comment"># Download</span><br/>
-            <span class="cmd">wget https://your-site.com/dist/PortScanPro-linux</span><br/><br/>
+            <!-- UPDATED LINK 4 -->
+            <span class="cmd">wget https://github.com/douaazaibak01/portscanner-/releases/download/V2.0/PortScanPro.exe</span><br/><br/>
             <span class="comment"># Make executable and run</span><br/>
-            <span class="cmd">chmod +x PortScanPro-linux && ./PortScanPro-linux</span><br/><br/>
+            <span class="cmd">chmod +x PortScanPro.exe && ./PortScanPro.exe</span><br/><br/>
             <span class="out"># Server starts at http://localhost:8000</span>
           </div>
           <div class="install-note">
