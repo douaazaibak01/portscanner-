@@ -25,20 +25,20 @@ export function usePdf() {
     doc.rect(0, 0, W, 297, "F");
 
     // ── Header bar ───────────────────────────────────────────
-    doc.setFillColor(245, 246, 248);
+    doc.setFillColor(227, 24, 55);
     doc.rect(0, 0, W, 28, "F");
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
-    doc.setTextColor(28, 36, 48);
-    doc.text("PORTSCAN PRO", 14, 12);
+    doc.setTextColor(255, 255, 255);
+    doc.text("PortScan Pro", 14, 12);
 
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(80, 92, 108);
+    doc.setTextColor(255, 255, 255);
     doc.text("Network Security Scanner & Insecure Protocol Detector", 14, 19);
 
-    doc.setTextColor(80, 92, 108);
+    doc.setTextColor(255, 255, 255);
     doc.text(`Generated: ${now}`, W - 14, 19, { align: "right" });
 
     // ── Scan metadata box ────────────────────────────────────
@@ -67,9 +67,12 @@ export function usePdf() {
     // ── Summary stats ────────────────────────────────────────
     y += 30;
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(80, 92, 108);
-    doc.text("// SECURITY FINDINGS SUMMARY", 14, y);
+    doc.setFontSize(10);
+    doc.setTextColor(227, 24, 55);
+    doc.text("SECURITY FINDINGS SUMMARY", 14, y);
+    doc.setDrawColor(227, 24, 55);
+    doc.setLineWidth(0.5);
+    doc.line(14, y + 2, 90, y + 2);
 
     y += 6;
     const statItems = [
@@ -103,9 +106,12 @@ export function usePdf() {
     y += 26;
     if (findings.length > 0) {
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(90, 106, 126);
-      doc.text("// SECURITY FINDINGS", 14, y);
+      doc.setFontSize(10);
+      doc.setTextColor(227, 24, 55);
+      doc.text("SECURITY FINDINGS", 14, y);
+      doc.setDrawColor(227, 24, 55);
+      doc.setLineWidth(0.5);
+      doc.line(14, y + 2, 75, y + 2);
       y += 4;
 
       autoTable(doc, {
@@ -172,9 +178,12 @@ export function usePdf() {
       if (y > 240) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, W, 297, "F"); y = 20; }
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.setTextColor(90, 106, 126);
-      doc.text("// OPEN PORTS", 14, y);
+      doc.setFontSize(10);
+      doc.setTextColor(227, 24, 55);
+      doc.text("OPEN PORTS", 14, y);
+      doc.setDrawColor(227, 24, 55);
+      doc.setLineWidth(0.5);
+      doc.line(14, y + 2, 55, y + 2);
       y += 4;
 
       const COMMON_SERVICES = {
