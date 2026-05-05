@@ -2,7 +2,6 @@ import React, { useState } from "react";
 
 const PRESETS = [
   { label: "Top 1K",       value: "1-1024" },
-  { label: "Full scan",    value: "1-65535" },
   { label: "FTP/Telnet",   value: "21-23" },
   { label: "Web",          value: "80-443" },
   { label: "Quick 1-100",  value: "1-100" },
@@ -15,7 +14,6 @@ const PRESETS = [
 export default function ScanForm({ onScan, onAbort, scanning }) {
   const [target,  setTarget]  = useState("");
   const [ports,   setPorts]   = useState("1-1024");
-  const [timeout, setTimeout_] = useState("0.8");
   const [threads, setThreads] = useState("150");
   const [err, setErr] = useState("");
 
@@ -30,7 +28,8 @@ export default function ScanForm({ onScan, onAbort, scanning }) {
     if (s < 1 || en > 65535 || s > en) { setErr("Port range must be 1–65535 with start ≤ end."); return; }
     if (en - s > 9999) { setErr("Maximum 10 000 ports per scan."); return; }
 
-    onScan(target.trim(), ports.trim(), parseFloat(timeout), parseInt(threads));
+    // Do not send a UI-configured timeout; let the backend default be used
+    onScan(target.trim(), ports.trim(), undefined, parseInt(threads));
   }
 
   return (
@@ -91,18 +90,7 @@ export default function ScanForm({ onScan, onAbort, scanning }) {
             </div>
           </div>
 
-          <div>
-            <label className="block font-mono text-[11px] uppercase tracking-widest mb-2"
-              style={{ color: "#5a6a7e" }}>Timeout (seconds)</label>
-            <input
-              className="input-field"
-              type="number"
-              min="0.1" max="10" step="0.1"
-              value={timeout}
-              onChange={e => setTimeout_(e.target.value)}
-              disabled={scanning}
-            />
-          </div>
+          {/* timeout removed — backend default applies */}
         </div>
 
         {/* Threads */}

@@ -47,7 +47,10 @@ export function useScan() {
     // Reset state
     setState({ ...INIT_STATE, phase: "scanning", statusMsg: "Connecting…" });
 
-    const params = new URLSearchParams({ target, ports, timeout, threads });
+    const params = new URLSearchParams({ target, ports, threads });
+    if (typeof timeout !== "undefined" && timeout !== null && timeout !== "") {
+      params.set("timeout", String(timeout));
+    }
     const url = `${API_BASE}/scan/stream?${params}`;
     const es = new EventSource(url);
     esRef.current = es;

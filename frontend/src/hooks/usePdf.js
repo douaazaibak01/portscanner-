@@ -20,37 +20,37 @@ export function usePdf() {
     const W = doc.internal.pageSize.getWidth();
     const now = new Date().toLocaleString();
 
-    // ── Page background ──────────────────────────────────────
-    doc.setFillColor(5, 7, 9);
+    // ── Page background (light mode) ─────────────────────────
+    doc.setFillColor(255, 255, 255);
     doc.rect(0, 0, W, 297, "F");
 
     // ── Header bar ───────────────────────────────────────────
-    doc.setFillColor(255, 45, 120);
+    doc.setFillColor(245, 246, 248);
     doc.rect(0, 0, W, 28, "F");
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
-    doc.setTextColor(255, 255, 255);
+    doc.setTextColor(28, 36, 48);
     doc.text("PORTSCAN PRO", 14, 12);
 
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(255, 200, 220);
+    doc.setTextColor(80, 92, 108);
     doc.text("Network Security Scanner & Insecure Protocol Detector", 14, 19);
 
-    doc.setTextColor(255, 200, 220);
+    doc.setTextColor(80, 92, 108);
     doc.text(`Generated: ${now}`, W - 14, 19, { align: "right" });
 
     // ── Scan metadata box ────────────────────────────────────
     let y = 36;
-    doc.setFillColor(15, 20, 25);
+    doc.setFillColor(255, 255, 255);
     doc.roundedRect(10, y, W - 20, 22, 3, 3, "F");
-    doc.setDrawColor(26, 35, 50);
+    doc.setDrawColor(220, 225, 230);
     doc.roundedRect(10, y, W - 20, 22, 3, 3, "S");
 
     doc.setFont("courier", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(255, 45, 120);
+    doc.setTextColor(110, 120, 130);
     doc.text("TARGET", 16, y + 7);
     doc.text("PORT RANGE", 70, y + 7);
     doc.text("OPEN PORTS", 120, y + 7);
@@ -58,7 +58,7 @@ export function usePdf() {
 
     doc.setFont("courier", "normal");
     doc.setFontSize(11);
-    doc.setTextColor(230, 237, 243);
+    doc.setTextColor(28, 36, 48);
     doc.text(target, 16, y + 16);
     doc.text(ports, 70, y + 16);
     doc.text(String(openPorts.length), 120, y + 16);
@@ -68,7 +68,7 @@ export function usePdf() {
     y += 30;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(90, 106, 126);
+    doc.setTextColor(80, 92, 108);
     doc.text("// SECURITY FINDINGS SUMMARY", 14, y);
 
     y += 6;
@@ -82,9 +82,11 @@ export function usePdf() {
     const boxW = (W - 28) / 4;
     statItems.forEach((s, i) => {
       const x = 14 + i * (boxW + 2.5);
-      doc.setFillColor(15, 20, 25);
+      doc.setFillColor(255, 255, 255);
       doc.roundedRect(x, y, boxW, 18, 2, 2, "F");
-      doc.setFillColor(...s.color);
+      doc.setDrawColor(235, 236, 238);
+      doc.roundedRect(x, y, boxW, 18, 2, 2, "S");
+      doc.setFillColor(...s.color.map(c => Math.min(255, c + 30)));
       doc.roundedRect(x, y + 16, boxW, 2, 0, 0, "F");
 
       doc.setFont("helvetica", "bold");
@@ -93,7 +95,7 @@ export function usePdf() {
       doc.text(String(s.value), x + boxW / 2, y + 11, { align: "center" });
 
       doc.setFontSize(7);
-      doc.setTextColor(90, 106, 126);
+      doc.setTextColor(110, 120, 130);
       doc.text(s.label, x + boxW / 2, y + 17, { align: "center" });
     });
 
@@ -121,21 +123,21 @@ export function usePdf() {
         styles: {
           font: "courier",
           fontSize: 7.5,
-          textColor: [200, 210, 220],
+          textColor: [28, 36, 48],
           cellPadding: { top: 3, right: 5, bottom: 3, left: 5 },
-          lineColor: [26, 35, 50],
+          lineColor: [220, 225, 230],
           lineWidth: 0.3,
-          fillColor: [10, 13, 18],
-          overflow: "linebreak",
+          fillColor: [255, 255, 255],
+          overflow: "ellipsize",
         },
         headStyles: {
-          fillColor: [15, 20, 25],
-          textColor: [90, 106, 126],
+          fillColor: [245, 245, 246],
+          textColor: [80, 92, 108],
           fontSize: 7,
           fontStyle: "bold",
         },
         columnStyles: {
-          0: { cellWidth: 18 },
+          0: { cellWidth: 30, overflow: 'ellipsize', halign: 'center' },
           1: { cellWidth: 14 },
           2: { cellWidth: 22 },
           3: { cellWidth: 12 },
@@ -154,18 +156,20 @@ export function usePdf() {
       });
       y = doc.lastAutoTable.finalY + 8;
     } else {
-      doc.setFillColor(0, 30, 20);
+      doc.setFillColor(255, 255, 255);
       doc.roundedRect(14, y, W - 28, 16, 3, 3, "F");
+      doc.setDrawColor(220, 225, 230);
+      doc.roundedRect(14, y, W - 28, 16, 3, 3, "S");
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
-      doc.setTextColor(0, 255, 136);
+      doc.setTextColor(0, 150, 80);
       doc.text("✓  No insecure protocols detected — all scanned ports passed.", W / 2, y + 10, { align: "center" });
       y += 22;
     }
 
     // ── Open ports table ─────────────────────────────────────
     if (openPorts.length > 0) {
-      if (y > 240) { doc.addPage(); doc.setFillColor(5, 7, 9); doc.rect(0, 0, W, 297, "F"); y = 20; }
+      if (y > 240) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, W, 297, "F"); y = 20; }
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
@@ -194,15 +198,15 @@ export function usePdf() {
         styles: {
           font: "courier",
           fontSize: 7.5,
-          textColor: [200, 210, 220],
+          textColor: [28, 36, 48],
           cellPadding: { top: 3, right: 5, bottom: 3, left: 5 },
-          lineColor: [26, 35, 50],
+          lineColor: [220, 225, 230],
           lineWidth: 0.3,
-          fillColor: [10, 13, 18],
+          fillColor: [255, 255, 255],
         },
         headStyles: {
-          fillColor: [15, 20, 25],
-          textColor: [90, 106, 126],
+          fillColor: [245, 245, 246],
+          textColor: [80, 92, 108],
           fontSize: 7,
           fontStyle: "bold",
         },
@@ -220,11 +224,11 @@ export function usePdf() {
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      doc.setFillColor(15, 20, 25);
+      doc.setFillColor(245, 245, 246);
       doc.rect(0, 284, W, 13, "F");
       doc.setFont("courier", "normal");
       doc.setFontSize(7);
-      doc.setTextColor(90, 106, 126);
+      doc.setTextColor(80, 92, 108);
       doc.text("PortScan Pro — Network Security Report — For authorized use only", 14, 291);
       doc.text(`Page ${i} / ${pageCount}`, W - 14, 291, { align: "right" });
     }
