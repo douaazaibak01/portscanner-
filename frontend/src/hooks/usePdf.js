@@ -1,17 +1,20 @@
-/**
- * usePdf.js
- * Generates a styled PDF report from scan results using jsPDF + autoTable.
- */
-
 import { useCallback } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+
+const COLORS = {
+  PRIMARY: [214, 51, 108],    // Berry Red/Pink from your UI
+  DARK_TEXT: [28, 36, 48],    // Deep Navy
+  MUTED_TEXT: [110, 120, 130], // Slate Gray
+  BORDER: [235, 236, 238],    // Light Gray
+  TABLE_HEADER: [43, 44, 54], // Dark Slate for headers
+};
 
 const SEV_COLORS = {
   CRITICAL: [255, 51, 85],
   HIGH:     [255, 116, 51],
   MEDIUM:   [255, 224, 51],
-  LOW:      [0, 255, 136],
+  LOW:      [0, 200, 100],
 };
 
 export function usePdf() {
@@ -20,229 +23,131 @@ export function usePdf() {
     const W = doc.internal.pageSize.getWidth();
     const now = new Date().toLocaleString();
 
-    // ── Page background (light mode) ─────────────────────────
-    doc.setFillColor(255, 255, 255);
-    doc.rect(0, 0, W, 297, "F");
-
-    // ── Header bar ───────────────────────────────────────────
-    doc.setFillColor(227, 24, 55);
-    doc.rect(0, 0, W, 28, "F");
+    // 1. Header Section
+    doc.setFillColor(...COLORS.PRIMARY);
+    doc.rect(0, 0, W, 40, "F");
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
+    doc.setFontSize(24);
     doc.setTextColor(255, 255, 255);
-    doc.text("PortScan Pro", 14, 12);
+    doc.text("PortScan Pro", 14, 18);
 
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(255, 255, 255);
-    doc.text("Network Security Scanner & Insecure Protocol Detector", 14, 19);
-
-    doc.setTextColor(255, 255, 255);
-    doc.text(`Generated: ${now}`, W - 14, 19, { align: "right" });
-
-    // ── Scan metadata box ────────────────────────────────────
-    let y = 36;
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(10, y, W - 20, 22, 3, 3, "F");
-    doc.setDrawColor(220, 225, 230);
-    doc.roundedRect(10, y, W - 20, 22, 3, 3, "S");
-
-    doc.setFont("courier", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(110, 120, 130);
-    doc.text("TARGET", 16, y + 7);
-    doc.text("PORT RANGE", 70, y + 7);
-    doc.text("OPEN PORTS", 120, y + 7);
-    doc.text("ELAPSED", 165, y + 7);
-
-    doc.setFont("courier", "normal");
-    doc.setFontSize(11);
-    doc.setTextColor(28, 36, 48);
-    doc.text(target, 16, y + 16);
-    doc.text(ports, 70, y + 16);
-    doc.text(String(openPorts.length), 120, y + 16);
-    doc.text(`${elapsed}s`, 165, y + 16);
-
-    // ── Summary stats ────────────────────────────────────────
-    y += 30;
-    doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(227, 24, 55);
-    doc.text("SECURITY FINDINGS SUMMARY", 14, y);
-    doc.setDrawColor(227, 24, 55);
-    doc.setLineWidth(0.5);
-    doc.line(14, y + 2, 90, y + 2);
+    doc.setFont("helvetica", "normal");
+    doc.text("Network Security Scanner & Insecure Protocol Detector", 14, 28);
+    doc.text(`Generated: ${now}`, W - 14, 28, { align: "right" });
 
-    y += 6;
-    const statItems = [
-      { label: "CRITICAL", value: stats?.critical ?? 0, color: [255, 51, 85] },
-      { label: "HIGH",     value: stats?.high     ?? 0, color: [255, 116, 51] },
-      { label: "MEDIUM",   value: stats?.medium   ?? 0, color: [255, 224, 51] },
-      { label: "LOW",      value: stats?.low      ?? 0, color: [0, 200, 100] },
+    // 2. Metadata Box (The "Card")
+    let y = 48;
+    doc.setFillColor(252, 252, 253);
+    doc.roundedRect(10, y, W - 20, 28, 4, 4, "F");
+    doc.setDrawColor(...COLORS.BORDER);
+    doc.roundedRect(10, y, W - 20, 28, 4, 4, "S");
+
+    const metaCols = [
+      { label: "TARGET", value: target, x: 18 },
+      { label: "PORT RANGE", value: ports, x: 65 },
+      { label: "OPEN PORTS", value: String(openPorts.length), x: 110 },
+      { label: "ELAPSED", value: `${elapsed}s`, x: 155 }
     ];
 
-    const boxW = (W - 28) / 4;
-    statItems.forEach((s, i) => {
-      const x = 14 + i * (boxW + 2.5);
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(x, y, boxW, 18, 2, 2, "F");
-      doc.setDrawColor(235, 236, 238);
-      doc.roundedRect(x, y, boxW, 18, 2, 2, "S");
-      doc.setFillColor(...s.color.map(c => Math.min(255, c + 30)));
-      doc.roundedRect(x, y + 16, boxW, 2, 0, 0, "F");
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.setTextColor(...s.color);
-      doc.text(String(s.value), x + boxW / 2, y + 11, { align: "center" });
-
+    metaCols.forEach(col => {
       doc.setFontSize(7);
-      doc.setTextColor(110, 120, 130);
-      doc.text(s.label, x + boxW / 2, y + 17, { align: "center" });
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...COLORS.MUTED_TEXT);
+      doc.text(col.label, col.x, y + 8);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(...COLORS.DARK_TEXT);
+      doc.text(col.value, col.x, y + 18);
     });
 
-    // ── Findings table ───────────────────────────────────────
-    y += 26;
-    if (findings.length > 0) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(227, 24, 55);
-      doc.text("SECURITY FINDINGS", 14, y);
-      doc.setDrawColor(227, 24, 55);
-      doc.setLineWidth(0.5);
-      doc.line(14, y + 2, 75, y + 2);
-      y += 4;
+    // 3. Security Summary Title
+    y += 42;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...COLORS.DARK_TEXT);
+    doc.text("SECURITY FINDINGS SUMMARY", 14, y);
+    doc.setFillColor(...COLORS.PRIMARY);
+    doc.rect(14, y + 2, 55, 1.5, "F"); // Colored underline
 
-      autoTable(doc, {
-        startY: y,
-        head: [["SEV", "PORT", "PROTOCOL", "RISK", "REASON", "RECOMMENDATION"]],
-        body: findings.map(f => [
-          f.severity,
-          `:${f.port}`,
-          f.name,
-          `${f.risk}/10`,
-          f.reason,
-          f.replace,
-        ]),
-        theme: "plain",
-        styles: {
-          font: "courier",
-          fontSize: 7.5,
-          textColor: [28, 36, 48],
-          cellPadding: { top: 3, right: 5, bottom: 3, left: 5 },
-          lineColor: [220, 225, 230],
-          lineWidth: 0.3,
-          fillColor: [255, 255, 255],
-          overflow: "ellipsize",
-        },
-        headStyles: {
-          fillColor: [245, 245, 246],
-          textColor: [80, 92, 108],
-          fontSize: 7,
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { cellWidth: 30, overflow: 'ellipsize', halign: 'center' },
-          1: { cellWidth: 14 },
-          2: { cellWidth: 22 },
-          3: { cellWidth: 12 },
-          4: { cellWidth: 60 },
-          5: { cellWidth: "auto" },
-        },
-        didParseCell: (hookData) => {
-          if (hookData.section === "body" && hookData.column.index === 0) {
-            const sev = hookData.cell.raw;
-            const c = SEV_COLORS[sev] || [100, 100, 100];
-            hookData.cell.styles.textColor = c;
-            hookData.cell.styles.fontStyle = "bold";
-          }
-        },
-        margin: { left: 14, right: 14 },
-      });
-      y = doc.lastAutoTable.finalY + 8;
-    } else {
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(14, y, W - 28, 16, 3, 3, "F");
-      doc.setDrawColor(220, 225, 230);
-      doc.roundedRect(14, y, W - 28, 16, 3, 3, "S");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.setTextColor(0, 150, 80);
-      doc.text("✓  No insecure protocols detected — all scanned ports passed.", W / 2, y + 10, { align: "center" });
-      y += 22;
-    }
+    // 4. Severity Cards
+    y += 12;
+    const boxW = (W - 34) / 4;
+    const statItems = [
+      { label: "CRITICAL", value: stats?.critical ?? 0, color: SEV_COLORS.CRITICAL },
+      { label: "HIGH",     value: stats?.high     ?? 0, color: SEV_COLORS.HIGH },
+      { label: "MEDIUM",   value: stats?.medium   ?? 0, color: SEV_COLORS.MEDIUM },
+      { label: "LOW",      value: stats?.low      ?? 0, color: SEV_COLORS.LOW },
+    ];
 
-    // ── Open ports table ─────────────────────────────────────
-    if (openPorts.length > 0) {
-      if (y > 240) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, W, 297, "F"); y = 20; }
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(227, 24, 55);
-      doc.text("OPEN PORTS", 14, y);
-      doc.setDrawColor(227, 24, 55);
-      doc.setLineWidth(0.5);
-      doc.line(14, y + 2, 55, y + 2);
-      y += 4;
-
-      const COMMON_SERVICES = {
-        21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP", 53: "DNS",
-        80: "HTTP", 110: "POP3", 143: "IMAP", 161: "SNMP", 389: "LDAP",
-        443: "HTTPS", 445: "SMB", 587: "SMTP-TLS", 993: "IMAPS",
-        995: "POP3S", 3306: "MySQL", 3389: "RDP", 5432: "PostgreSQL",
-        5900: "VNC", 6379: "Redis", 8080: "HTTP-Alt", 27017: "MongoDB",
-      };
-
-      autoTable(doc, {
-        startY: y,
-        head: [["PORT", "SERVICE", "HOST", "BANNER"]],
-        body: openPorts.map(p => [
-          `:${p.port}`,
-          COMMON_SERVICES[p.port] || "—",
-          p.host,
-          (p.banner || "").substring(0, 60),
-        ]),
-        theme: "plain",
-        styles: {
-          font: "courier",
-          fontSize: 7.5,
-          textColor: [28, 36, 48],
-          cellPadding: { top: 3, right: 5, bottom: 3, left: 5 },
-          lineColor: [220, 225, 230],
-          lineWidth: 0.3,
-          fillColor: [255, 255, 255],
-        },
-        headStyles: {
-          fillColor: [245, 245, 246],
-          textColor: [80, 92, 108],
-          fontSize: 7,
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { cellWidth: 16, textColor: [255, 45, 120] },
-          1: { cellWidth: 24 },
-          2: { cellWidth: 30 },
-          3: { cellWidth: "auto" },
-        },
-        margin: { left: 14, right: 14 },
-      });
-    }
-
-    // ── Footer on every page ─────────────────────────────────
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFillColor(245, 245, 246);
-      doc.rect(0, 284, W, 13, "F");
-      doc.setFont("courier", "normal");
+    statItems.forEach((s, i) => {
+      const x = 14 + i * (boxW + 2);
+      // Card Background
+      doc.setFillColor(248, 249, 250);
+      doc.roundedRect(x, y, boxW, 25, 1, 1, "F");
+      // Top Accent Line
+      doc.setFillColor(...s.color);
+      doc.rect(x, y, boxW, 1.5, "F");
+      
+      // Value
+      doc.setFontSize(20);
+      doc.setTextColor(...s.color);
+      doc.text(String(s.value), x + boxW/2, y + 14, { align: "center" });
+      
+      // Label
       doc.setFontSize(7);
-      doc.setTextColor(80, 92, 108);
-      doc.text("PortScan Pro — Network Security Report — For authorized use only", 14, 291);
-      doc.text(`Page ${i} / ${pageCount}`, W - 14, 291, { align: "right" });
-    }
+      doc.setTextColor(...COLORS.MUTED_TEXT);
+      doc.text(s.label, x + boxW/2, y + 21, { align: "center" });
+    });
 
-    doc.save(`portscan_${target.replace(/[./]/g, "_")}_${Date.now()}.pdf`);
+    // 5. Findings Table
+    y += 38;
+    doc.setFontSize(11);
+    doc.setTextColor(...COLORS.DARK_TEXT);
+    doc.text("SECURITY FINDINGS", 14, y);
+    doc.setFillColor(...COLORS.PRIMARY);
+    doc.rect(14, y + 2, 35, 1.5, "F");
+
+    autoTable(doc, {
+      startY: y + 8,
+      head: [["Severity", "Port", "Protocol", "Risk", "Reason", "Recommendation"]],
+      body: findings.map(f => [f.severity, f.port, f.name, `${f.risk}/10`, f.reason, f.replace]),
+      theme: "grid",
+      styles: { fontSize: 8, cellPadding: 4, lineColor: [230, 230, 230] },
+      headStyles: { fillColor: COLORS.TABLE_HEADER, textColor: [255, 255, 255], fontStyle: 'bold' },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 25 },
+        1: { cellWidth: 15 },
+        3: { halign: 'center', cellWidth: 15 },
+        5: { cellWidth: 45 }
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 0) {
+          data.cell.styles.textColor = SEV_COLORS[data.cell.raw] || [0,0,0];
+        }
+      }
+    });
+
+    // 6. Open Ports Table
+    y = doc.lastAutoTable.finalY + 15;
+    if (y > 250) { doc.addPage(); y = 20; }
+    
+    doc.setFontSize(11);
+    doc.text("OPEN PORTS", 14, y);
+    doc.setFillColor(...COLORS.PRIMARY);
+    doc.rect(14, y + 2, 23, 1.5, "F");
+
+    autoTable(doc, {
+      startY: y + 8,
+      head: [["Port", "Service", "Host", "Banner / Info"]],
+      body: openPorts.map(p => [p.port, p.service || "—", p.host, p.banner || "No banner"]),
+      theme: "grid",
+      headStyles: { fillColor: COLORS.TABLE_HEADER, textColor: [255, 255, 255] },
+      styles: { fontSize: 8, cellPadding: 3 }
+    });
+
+    doc.save(`Security_Report_${target}.pdf`);
   }, []);
 
   return { generatePdf };
