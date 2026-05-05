@@ -40,6 +40,7 @@ a = Analysis(
         (str(FRONTEND), "frontend/build"),
         # Bundle the scanner package explicitly (PyInstaller sometimes misses packages)
         (str(BACKEND / "scanner"), "scanner"),
+        (str(BACKEND / "tray.py"), "."),
     ],
     hiddenimports=[
         # uvicorn internals that PyInstaller's hook may miss
@@ -76,6 +77,17 @@ a = Analysis(
         # anyio
         "anyio",
         "anyio._backends._asyncio",
+        # pystray (system tray)
+        "pystray",
+        "pystray._base",
+        "pystray._win32",
+        "pystray._darwin",
+        "pystray._xorg",
+        # Pillow (icon drawing)
+        "PIL",
+        "PIL.Image",
+        "PIL.ImageDraw",
+        "PIL._imaging",
         # Email validator (Pydantic optional dep)
         "email_validator",
     ],
@@ -103,14 +115,14 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name="PortScanPro",
+    name="PortScan Pro",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,               # compress the binary (UPX must be installed for this to work; safe to ignore warning if not)
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,           # keep console window so users can see startup messages & errors
+    console=False,           # keep console window so users can see startup messages & errors
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

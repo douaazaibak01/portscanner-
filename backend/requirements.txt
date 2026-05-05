@@ -5,3 +5,5 @@ rich>=13.0
 jinja2>=3.0
 h11>=0.14.0
 anyio>=4.0.0
+pystray>=0.19.5
+Pillow>=10.0.0

@@ -1,7 +1,6 @@
 /**
- * usePdf.js — Light mode PDF report
- * Matches the layout shown in the screenshot:
- * white background, pink header bar, clean tables.
+ * usePdf.js
+ * Generates a styled PDF report from scan results using jsPDF + autoTable.
  */
 
 import { useCallback } from "react";
@@ -9,18 +8,10 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const SEV_COLORS = {
-  CRITICAL: [220, 38, 57],
-  HIGH: [220, 100, 30],
-  MEDIUM: [180, 140, 0],
-  LOW: [22, 160, 80],
-};
-
-const COMMON_SERVICES = {
-  21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP", 53: "DNS",
-  80: "HTTP", 110: "POP3", 143: "IMAP", 161: "SNMP", 389: "LDAP",
-  443: "HTTPS", 445: "SMB", 587: "SMTP-TLS", 993: "IMAPS",
-  995: "POP3S", 3306: "MySQL", 3389: "RDP", 5432: "PostgreSQL",
-  5900: "VNC", 6379: "Redis", 8080: "HTTP-Alt", 27017: "MongoDB",
+  CRITICAL: [255, 51, 85],
+  HIGH:     [255, 116, 51],
+  MEDIUM:   [255, 224, 51],
+  LOW:      [0, 255, 136],
 };
 
 export function usePdf() {
@@ -29,207 +20,216 @@ export function usePdf() {
     const W = doc.internal.pageSize.getWidth();
     const now = new Date().toLocaleString();
 
-    // ── White background ──────────────────────────────────────
-    doc.setFillColor(255, 255, 255);
+    // ── Page background ──────────────────────────────────────
+    doc.setFillColor(5, 7, 9);
     doc.rect(0, 0, W, 297, "F");
 
-    // ── Pink header bar ───────────────────────────────────────
-    doc.setFillColor(220, 38, 100);
-    doc.rect(0, 0, W, 30, "F");
+    // ── Header bar ───────────────────────────────────────────
+    doc.setFillColor(255, 45, 120);
+    doc.rect(0, 0, W, 28, "F");
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
+    doc.setFontSize(18);
     doc.setTextColor(255, 255, 255);
-    doc.text("PortScan Pro", 14, 13);
+    doc.text("PORTSCAN PRO", 14, 12);
 
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(255, 200, 220);
-    doc.text("Network Security Scanner & Insecure Protocol Detector", 14, 21);
-    doc.text(`Generated: ${now}`, W - 14, 21, { align: "right" });
+    doc.text("Network Security Scanner & Insecure Protocol Detector", 14, 19);
 
-    // ── Scan metadata box ─────────────────────────────────────
-    let y = 38;
-    doc.setDrawColor(220, 220, 225);
-    doc.setFillColor(248, 248, 250);
-    doc.roundedRect(10, y, W - 20, 24, 3, 3, "FD");
+    doc.setTextColor(255, 200, 220);
+    doc.text(`Generated: ${now}`, W - 14, 19, { align: "right" });
 
-    const cols = [
-      { label: "TARGET", value: target },
-      { label: "PORT RANGE", value: ports },
-      { label: "OPEN PORTS", value: String(openPorts.length) },
-      { label: "ELAPSED", value: `${elapsed}s` },
-    ];
-    const colW = (W - 20) / cols.length;
-    cols.forEach((c, i) => {
-      const x = 14 + i * colW;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(7);
-      doc.setTextColor(140, 140, 150);
-      doc.text(c.label, x, y + 8);
+    // ── Scan metadata box ────────────────────────────────────
+    let y = 36;
+    doc.setFillColor(15, 20, 25);
+    doc.roundedRect(10, y, W - 20, 22, 3, 3, "F");
+    doc.setDrawColor(26, 35, 50);
+    doc.roundedRect(10, y, W - 20, 22, 3, 3, "S");
 
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(30, 30, 40);
-      doc.text(c.value, x, y + 18);
-    });
+    doc.setFont("courier", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(255, 45, 120);
+    doc.text("TARGET", 16, y + 7);
+    doc.text("PORT RANGE", 70, y + 7);
+    doc.text("OPEN PORTS", 120, y + 7);
+    doc.text("ELAPSED", 165, y + 7);
 
-    // ── Section heading helper ────────────────────────────────
-    const sectionHeading = (label, yPos) => {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.setTextColor(30, 30, 40);
-      doc.text(label, 14, yPos);
-      doc.setDrawColor(220, 38, 100);
-      doc.setLineWidth(0.8);
-      doc.line(14, yPos + 2, 14 + doc.getTextWidth(label), yPos + 2);
-      doc.setLineWidth(0.2);
-    };
+    doc.setFont("courier", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(230, 237, 243);
+    doc.text(target, 16, y + 16);
+    doc.text(ports, 70, y + 16);
+    doc.text(String(openPorts.length), 120, y + 16);
+    doc.text(`${elapsed}s`, 165, y + 16);
 
-    // ── Summary stats ─────────────────────────────────────────
-    y += 32;
-    sectionHeading("SECURITY FINDINGS SUMMARY", y);
-    y += 8;
+    // ── Summary stats ────────────────────────────────────────
+    y += 30;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(90, 106, 126);
+    doc.text("// SECURITY FINDINGS SUMMARY", 14, y);
 
+    y += 6;
     const statItems = [
-      { label: "CRITICAL", value: stats?.critical ?? 0, color: [220, 38, 57] },
-      { label: "HIGH", value: stats?.high ?? 0, color: [220, 100, 30] },
-      { label: "MEDIUM", value: stats?.medium ?? 0, color: [180, 140, 0] },
-      { label: "LOW", value: stats?.low ?? 0, color: [22, 160, 80] },
+      { label: "CRITICAL", value: stats?.critical ?? 0, color: [255, 51, 85] },
+      { label: "HIGH",     value: stats?.high     ?? 0, color: [255, 116, 51] },
+      { label: "MEDIUM",   value: stats?.medium   ?? 0, color: [255, 224, 51] },
+      { label: "LOW",      value: stats?.low      ?? 0, color: [0, 200, 100] },
     ];
 
-    const boxW = (W - 35) / 4;
+    const boxW = (W - 28) / 4;
     statItems.forEach((s, i) => {
-      const x = 14 + i * (boxW + 3);
-
+      const x = 14 + i * (boxW + 2.5);
+      doc.setFillColor(15, 20, 25);
+      doc.roundedRect(x, y, boxW, 18, 2, 2, "F");
       doc.setFillColor(...s.color);
-      doc.rect(x, y, boxW, 1.5, "F");
-
-      doc.setDrawColor(230, 230, 235);
-      doc.setFillColor(252, 252, 254);
-      doc.rect(x, y + 1.5, boxW, 18, "FD");
+      doc.roundedRect(x, y + 16, boxW, 2, 0, 0, "F");
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
       doc.setTextColor(...s.color);
-      doc.text(String(s.value), x + boxW / 2, y + 12, { align: "center" });
+      doc.text(String(s.value), x + boxW / 2, y + 11, { align: "center" });
 
       doc.setFontSize(7);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(100, 100, 110);
+      doc.setTextColor(90, 106, 126);
       doc.text(s.label, x + boxW / 2, y + 17, { align: "center" });
     });
 
-    // ── Findings table ────────────────────────────────────────
-    y += 28;
-    sectionHeading("SECURITY FINDINGS", y);
-    y += 6;
-
+    // ── Findings table ───────────────────────────────────────
+    y += 26;
     if (findings.length > 0) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(90, 106, 126);
+      doc.text("// SECURITY FINDINGS", 14, y);
+      y += 4;
+
       autoTable(doc, {
         startY: y,
-        head: [["Severity", "Port", "Protocol", "Risk", "Reason", "Recommendation"]],
+        head: [["SEV", "PORT", "PROTOCOL", "RISK", "REASON", "RECOMMENDATION"]],
         body: findings.map(f => [
           f.severity,
-          f.port,
+          `:${f.port}`,
           f.name,
           `${f.risk}/10`,
           f.reason,
           f.replace,
         ]),
-        theme: "grid",
+        theme: "plain",
         styles: {
-          font: "helvetica",
+          font: "courier",
           fontSize: 7.5,
-          textColor: [50, 50, 60],
-          cellPadding: 3,
-          lineColor: [220, 220, 230],
-          lineWidth: 0.1,
+          textColor: [200, 210, 220],
+          cellPadding: { top: 3, right: 5, bottom: 3, left: 5 },
+          lineColor: [26, 35, 50],
+          lineWidth: 0.3,
+          fillColor: [10, 13, 18],
+          overflow: "linebreak",
         },
         headStyles: {
-          fillColor: [50, 50, 60],
-          textColor: [255, 255, 255],
-          fontSize: 8,
+          fillColor: [15, 20, 25],
+          textColor: [90, 106, 126],
+          fontSize: 7,
           fontStyle: "bold",
         },
-        alternateRowStyles: { fillColor: [250, 250, 252] },
         columnStyles: {
-          0: { cellWidth: 20, fontStyle: "bold" },
-          1: { cellWidth: 15 },
+          0: { cellWidth: 18 },
+          1: { cellWidth: 14 },
           2: { cellWidth: 22 },
-          3: { cellWidth: 15 },
-          4: { cellWidth: 55 },
+          3: { cellWidth: 12 },
+          4: { cellWidth: 60 },
           5: { cellWidth: "auto" },
         },
-        didParseCell: (data) => {
-          if (data.section === "body" && data.column.index === 0) {
-            const sev = String(data.cell.raw).toUpperCase();
-            if (SEV_COLORS[sev]) {
-              data.cell.styles.textColor = SEV_COLORS[sev];
-            }
+        didParseCell: (hookData) => {
+          if (hookData.section === "body" && hookData.column.index === 0) {
+            const sev = hookData.cell.raw;
+            const c = SEV_COLORS[sev] || [100, 100, 100];
+            hookData.cell.styles.textColor = c;
+            hookData.cell.styles.fontStyle = "bold";
           }
         },
         margin: { left: 14, right: 14 },
       });
-      y = doc.lastAutoTable.finalY + 12;
+      y = doc.lastAutoTable.finalY + 8;
     } else {
-      // Success Message Box
-      doc.setFillColor(240, 250, 240);
-      doc.setDrawColor(180, 220, 180);
-      doc.roundedRect(14, y, W - 28, 15, 2, 2, "FD");
+      doc.setFillColor(0, 30, 20);
+      doc.roundedRect(14, y, W - 28, 16, 3, 3, "F");
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
-      doc.setTextColor(30, 120, 60);
-      doc.text("No security risks identified. All protocols appear secure.", W / 2, y + 9, { align: "center" });
-      y += 25;
+      doc.setTextColor(0, 255, 136);
+      doc.text("✓  No insecure protocols detected — all scanned ports passed.", W / 2, y + 10, { align: "center" });
+      y += 22;
     }
 
-    // ── Open ports table ──────────────────────────────────────
+    // ── Open ports table ─────────────────────────────────────
     if (openPorts.length > 0) {
-      if (y > 230) { doc.addPage(); y = 20; }
+      if (y > 240) { doc.addPage(); doc.setFillColor(5, 7, 9); doc.rect(0, 0, W, 297, "F"); y = 20; }
 
-      sectionHeading("OPEN PORTS LIST", y);
-      y += 6;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(90, 106, 126);
+      doc.text("// OPEN PORTS", 14, y);
+      y += 4;
+
+      const COMMON_SERVICES = {
+        21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP", 53: "DNS",
+        80: "HTTP", 110: "POP3", 143: "IMAP", 161: "SNMP", 389: "LDAP",
+        443: "HTTPS", 445: "SMB", 587: "SMTP-TLS", 993: "IMAPS",
+        995: "POP3S", 3306: "MySQL", 3389: "RDP", 5432: "PostgreSQL",
+        5900: "VNC", 6379: "Redis", 8080: "HTTP-Alt", 27017: "MongoDB",
+      };
 
       autoTable(doc, {
         startY: y,
-        head: [["Port", "Service", "Host", "Banner / Info"]],
+        head: [["PORT", "SERVICE", "HOST", "BANNER"]],
         body: openPorts.map(p => [
-          p.port,
-          COMMON_SERVICES[p.port] || "Unknown",
+          `:${p.port}`,
+          COMMON_SERVICES[p.port] || "—",
           p.host,
-          (p.banner || "No banner retrieved").substring(0, 80),
+          (p.banner || "").substring(0, 60),
         ]),
-        theme: "grid",
+        theme: "plain",
         styles: {
-          font: "helvetica",
-          fontSize: 8,
-          textColor: [60, 60, 70],
-          lineColor: [220, 220, 230],
+          font: "courier",
+          fontSize: 7.5,
+          textColor: [200, 210, 220],
+          cellPadding: { top: 3, right: 5, bottom: 3, left: 5 },
+          lineColor: [26, 35, 50],
+          lineWidth: 0.3,
+          fillColor: [10, 13, 18],
         },
         headStyles: {
-          fillColor: [220, 38, 100], // Match header pink for variety
-          textColor: [255, 255, 255],
+          fillColor: [15, 20, 25],
+          textColor: [90, 106, 126],
+          fontSize: 7,
+          fontStyle: "bold",
         },
         columnStyles: {
-          0: { cellWidth: 20, fontStyle: "bold", textColor: [220, 38, 100] },
-          1: { cellWidth: 30 },
-          2: { cellWidth: 40 },
+          0: { cellWidth: 16, textColor: [255, 45, 120] },
+          1: { cellWidth: 24 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: "auto" },
         },
         margin: { left: 14, right: 14 },
       });
     }
 
-    // ── Footer ────────────────────────────────────────────────
+    // ── Footer on every page ─────────────────────────────────
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
+      doc.setFillColor(15, 20, 25);
+      doc.rect(0, 284, W, 13, "F");
+      doc.setFont("courier", "normal");
       doc.setFontSize(7);
-      doc.setTextColor(170, 170, 180);
-      doc.text(`PortScan Pro Confidential — Target: ${target}`, 14, 290);
-      doc.text(`Page ${i} of ${pageCount}`, W - 14, 290, { align: "right" });
+      doc.setTextColor(90, 106, 126);
+      doc.text("PortScan Pro — Network Security Report — For authorized use only", 14, 291);
+      doc.text(`Page ${i} / ${pageCount}`, W - 14, 291, { align: "right" });
     }
 
-    doc.save(`Security_Report_${target.replace(/[^a-z0-9]/gi, "_")}.pdf`);
+    doc.save(`portscan_${target.replace(/[./]/g, "_")}_${Date.now()}.pdf`);
   }, []);
 
   return { generatePdf };

@@ -40,14 +40,14 @@ export function useScan() {
   }, []);
 
   /** Start a scan */
-  const startScan = useCallback((target, ports, threads) => {
+  const startScan = useCallback((target, ports, timeout, threads) => {
     // Close any existing connection
     if (esRef.current) { esRef.current.close(); esRef.current = null; }
 
     // Reset state
     setState({ ...INIT_STATE, phase: "scanning", statusMsg: "Connecting…" });
 
-    const params = new URLSearchParams({ target, ports, threads });
+    const params = new URLSearchParams({ target, ports, timeout, threads });
     const url = `${API_BASE}/scan/stream?${params}`;
     const es = new EventSource(url);
     esRef.current = es;

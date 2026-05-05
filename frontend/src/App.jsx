@@ -16,9 +16,9 @@ export default function App() {
   // Track the last scan params for the PDF
   const [lastParams, setLastParams] = useState({ target: "", ports: "" });
 
-  function handleScan(target, ports, threads) {
+  function handleScan(target, ports, timeout, threads) {
     setLastParams({ target, ports });
-    startScan(target, ports, threads);
+    startScan(target, ports, timeout, threads);
   }
 
   function handleDownloadPdf() {

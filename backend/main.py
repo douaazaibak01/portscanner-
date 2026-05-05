@@ -234,18 +234,103 @@ async def serve_frontend(full_path: str = ""):
     return {"error": "index.html not found in build folder"}
 
 
-# ── Desktop entry point ───────────────────────────────────────────────────────
 
-def _open_browser():
-    time.sleep(1.5)
+
+
+# ── Helpers: port management & single-instance ───────────────────────────────
+
+def _kill_port(port: int):
+    """Kill whatever process is already listening on the given port."""
+    import socket, signal
+    # Quick check — is anything actually there?
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.3)
+        if s.connect_ex(("127.0.0.1", port)) != 0:
+            return  # port is free, nothing to do
+
+    # Port is occupied — kill it
+    if sys.platform == "win32":
+        os.system(f'for /f "tokens=5" %a in (\'netstat -aon ^| findstr :{port}\') do taskkill /F /PID %a >nul 2>&1')
+    else:
+        os.system(f"fuser -k {port}/tcp 2>/dev/null || lsof -ti:{port} | xargs kill -9 2>/dev/null")
+    time.sleep(0.6)  # give OS time to release the port
+
+
+def _write_pidfile():
+    """Write our PID so future launches can find and kill us."""
+    pid_path = Path(os.environ.get("TEMP", "/tmp")) / "portscanpro.pid"
+    pid_path.write_text(str(os.getpid()))
+
+
+def _open_browser_delayed(delay: float = 1.8):
+    time.sleep(delay)
     webbrowser.open("http://localhost:8000")
 
 
+# ── Desktop entry point ───────────────────────────────────────────────────────
+
 if __name__ == "__main__":
     import uvicorn
-    print("=" * 52)
-    print("  PortScan Pro  |  http://localhost:8000")
-    print("  Opening your browser... Press Ctrl+C to stop.")
-    print("=" * 52)
-    threading.Thread(target=_open_browser, daemon=True).start()
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
+    import logging
+
+    PORT = 8000
+
+    # ── Fix for PyInstaller console=False: redirect all output to a log file ──
+    # When frozen with no console, sys.stdout and sys.stderr are None.
+    # uvicorn's logging setup crashes if it tries to write to None.
+    log_dir = Path(os.environ.get("APPDATA", os.path.expanduser("~"))) / "PortScanPro"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "portscanpro.log"
+
+    if sys.stdout is None:
+        sys.stdout = open(log_file, "a", encoding="utf-8")
+    if sys.stderr is None:
+        sys.stderr = sys.stdout
+
+    # Route all logging to the same file
+    logging.basicConfig(
+        filename=str(log_file),
+        level=logging.WARNING,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+
+    # 1. Free the port if something is already using it
+    _kill_port(PORT)
+
+    # 2. Remember our own PID
+    _write_pidfile()
+
+    # 3. Open browser after a short delay
+    threading.Thread(target=_open_browser_delayed, daemon=True).start()
+
+    # 4. Start system tray icon (right-click → Open / Quit)
+    stop_event = threading.Event()
+    try:
+        from tray import run_tray
+        tray_thread = threading.Thread(target=run_tray, args=(stop_event,), daemon=True)
+        tray_thread.start()
+    except Exception:
+        pass  # tray is optional
+
+    # 5. Run uvicorn
+    config = uvicorn.Config(
+        app,
+        host="127.0.0.1",
+        port=PORT,
+        log_level="error",
+        access_log=False,
+    )
+    server = uvicorn.Server(config)
+
+    server_thread = threading.Thread(target=server.run, daemon=True)
+    server_thread.start()
+
+    # Wait until user quits via tray or Ctrl+C
+    try:
+        stop_event.wait()
+    except KeyboardInterrupt:
+        pass
+
+    server.should_exit = True
+    server_thread.join(timeout=3)
+    sys.exit(0)

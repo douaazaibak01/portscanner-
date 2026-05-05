@@ -1,84 +1,44 @@
-# PortScan Pro — Web App (No-Auth Edition)
+# PortScan Pro — Desktop Edition
 
-A full-stack network port scanner and insecure protocol detector.
+Local network port scanner. Runs on YOUR machine — scans private IPs (192.168.x.x, 10.x.x.x) directly.
 
-```
-Stack: FastAPI (Python) + React + Tailwind CSS
-```
+## Quick Start (end users)
 
----
+1. Download `PortScanPro.exe` (Windows) or `PortScanPro` (Linux/macOS)
+2. Run it — your browser opens automatically at http://localhost:8000
+3. Enter any local IP and scan
 
-## Project Structure
+> Windows SmartScreen warning is normal for unsigned apps — click More info → Run anyway
 
-```
-portscan_pro/
-├── backend/
-│   ├── main.py               ← FastAPI app (POST /scan, GET /scan/stream)
-│   ├── requirements.txt
-│   └── scanner/
-│       ├── tcp_scanner.py
-│       ├── banner.py
-│       ├── protocols.py
-│       ├── risk.py
-│       └── udp_scanner.py
-└── frontend/
-    ├── package.json
-    ├── tailwind.config.js
-    ├── public/index.html
-    └── src/
-        ├── App.jsx
-        ├── index.js / index.css
-        ├── hooks/
-        │   ├── useScan.js
-        │   └── usePdf.js
-        └── components/
-            ├── Header.jsx
-            ├── ScanForm.jsx      ← ownership checkbox enforced here
-            ├── ScanProgress.jsx
-            ├── StatsBar.jsx
-            ├── FindingsPanel.jsx
-            ├── PortsTable.jsx
-            └── ProtocolRef.jsx
+## Build from Source
+
+Requirements: Python 3.10+, Node.js 18+
+
+**Linux/macOS:**
+```bash
+bash build.sh
+# binary → dist/PortScanPro
 ```
 
----
+**Windows:**
+```bat
+build.bat
+REM binary → dist\PortScanPro.exe
+```
 
-## Running Locally
+## How it works
 
-### 1 — Backend
+PyInstaller bundles FastAPI + the React build into one executable.
+FastAPI serves both the API (/scan, /health) and the React UI (/).
+No cloud server — everything runs locally so private IPs are reachable.
+
+## Development mode
 
 ```bash
-cd backend
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+# Backend
+cd backend && pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
+
+# Frontend (separate terminal)
+cd frontend && npm install && npm start
 ```
-
-API live at http://localhost:8000  
-Docs at http://localhost:8000/docs
-
-### 2 — Frontend
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
-UI opens at http://localhost:3000
-
----
-
-## Security Notes
-
-- **Ownership checkbox is enforced server-side** — it cannot be bypassed by editing the frontend.
-- **Rate limiting** — max 10 scans/hour per IP address.
-- **Audit log** — every scan is recorded in `scan_logs.db` (SQLite).
-- **Only scan targets you own or have explicit written permission to scan.**
-
----
-
-## Deploying to Production (Render.com)
-
-See DEPLOY.md for step-by-step hosting instructions.
